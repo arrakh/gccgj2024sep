@@ -2897,6 +2897,8 @@ MonoBehaviour:
   brushSizeSlider: {fileID: 2065013561}
   endDrawButton: {fileID: 741265350}
   clearButton: {fileID: 1441722145}
+  undoButton: {fileID: 1252031185}
+  redoButton: {fileID: 1175505631}
 --- !u!114 &1009642657
 MonoBehaviour:
   m_ObjectHideFlags: 0

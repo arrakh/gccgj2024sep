@@ -18,6 +18,7 @@ namespace DrawYourHero.UI
         [SerializeField] private Slider brushSizeSlider;
         [SerializeField] private Button endDrawButton;
         [SerializeField] private Button clearButton;
+        [SerializeField] private Button undoButton, redoButton;
         
         private BrushData brushData; 
         private DrawableSpriteRenderer spriteRenderer;
@@ -37,6 +38,8 @@ namespace DrawYourHero.UI
             camera = Camera.main;
             clearButton.onClick.AddListener(OnClear);
             endDrawButton.onClick.AddListener(StopDraw);
+            undoButton.onClick.AddListener(Undo);
+            redoButton.onClick.AddListener(Redo);
         }
 
         private void OnClear()
