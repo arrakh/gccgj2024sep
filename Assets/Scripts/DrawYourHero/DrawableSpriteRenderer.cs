@@ -13,31 +13,36 @@ public class DrawableSpriteRenderer : MonoBehaviour
 
     private readonly Vector2 pivot = new (0.5f, 0.5f);
 
+    private Vector2Int size;
+    private int arraySize;
+
+    private Color[] currentPixels;
+
     public Texture2D CurrentTexture => spriteRenderer.sprite.texture;
+    public Color[] CurrentPixels => currentPixels;
 
     public void ShowSizeReference(bool show)
     {
         sizeReference.SetActive(show);
     }
-    
+
+    private void Awake()
+    {
+        var scale = transform.localScale;
+        size.x = Mathf.RoundToInt(pixelsPerUnit * scale.x);
+        size.y = Mathf.RoundToInt(pixelsPerUnit * scale.y);
+        arraySize = size.x * size.y;
+    }
+
     public void Clear()
     {
-        if (spriteRenderer.sprite != null)
-        {
-            Destroy(spriteRenderer.sprite.texture);
-            Destroy(spriteRenderer.sprite);
-        }
-        
-        var scale = transform.localScale;
-        int xSize = Mathf.RoundToInt(pixelsPerUnit * scale.x);
-        int ySize = Mathf.RoundToInt(pixelsPerUnit * scale.y);
-        var tex = new Texture2D(xSize, ySize);
-        var colors = new Color[xSize * ySize];
-        for (int i = 0; i < xSize * ySize; i++)
+        var colors = new Color[arraySize];
+        for (int i = 0; i < arraySize; i++)
             colors[i] = Color.clear;
-        tex.SetPixels(colors);
-        tex.Apply();
-        spriteRenderer.sprite = Sprite.Create(tex, new Rect(0f, 0f, tex.width, tex.height), pivot, pixelsPerUnit);
+
+        currentPixels = colors;
+        
+        ApplyPixels(colors);
     }
 
     public void Draw(BrushData brushData, IBrush brush, float smoothness, Vector2 startPos, Vector2 endPos)
@@ -56,9 +61,7 @@ public class DrawableSpriteRenderer : MonoBehaviour
     private Texture2D DrawInternal(BrushData data, IBrush brush, float smoothness, Texture2D copiedTexture2D, Vector2 startPos, Vector2 endPos)
     {
         //STRUCTURE THIS BETTER TO ACCOMODATE SHAPE BRUSHES
-        Texture2D texture = new Texture2D(copiedTexture2D.width, copiedTexture2D.height);
-        texture.filterMode = FilterMode.Bilinear;
-        texture.wrapMode = TextureWrapMode.Clamp;
+        Texture2D texture = GetNewTexture();
 
         Color[] originalPixels = copiedTexture2D.GetPixels();
         Color[] newPixels = new Color[originalPixels.Length];
@@ -83,10 +86,38 @@ public class DrawableSpriteRenderer : MonoBehaviour
             brush.Draw(newPixels, data, pos, texture.width, texture.height);
         }
 
+        currentPixels = newPixels;
+
         texture.SetPixels(newPixels);
         texture.Apply();
         
         return texture;
+    }
+
+    public void ApplyPixels(Color[] pixels)
+    {
+        if (spriteRenderer.sprite != null && spriteRenderer.sprite.texture != null)
+        {
+            Destroy(spriteRenderer.sprite.texture);
+            spriteRenderer.sprite = null;
+        }
+
+        var tex = GetNewTexture();
+
+        tex.SetPixels(pixels);
+        tex.Apply();
+        spriteRenderer.sprite = Sprite.Create(tex, new Rect(0f, 0f, tex.width, tex.height), pivot, pixelsPerUnit);
+        currentPixels = pixels;
+    }
+
+    private Texture2D GetNewTexture()
+    {
+        var tex = new Texture2D(size.x, size.y);
+        
+        tex.filterMode = FilterMode.Bilinear;
+        tex.wrapMode = TextureWrapMode.Clamp;
+
+        return tex;
     }
 
 }

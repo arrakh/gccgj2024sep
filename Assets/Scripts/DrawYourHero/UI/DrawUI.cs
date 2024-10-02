@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using Brushes;
 using Brushes.Implementations;
 using DrawYourHero.Utility;
@@ -19,7 +21,10 @@ namespace DrawYourHero.UI
         
         private BrushData brushData; 
         private DrawableSpriteRenderer spriteRenderer;
-        
+
+        private Stack<Color[]> undoStack = new();
+        private Stack<Color[]> redoStack = new();
+
         private Vector2 lastWorldPoint;
         private bool hasLastMousePosition = false;
         private Camera camera;
@@ -38,11 +43,15 @@ namespace DrawYourHero.UI
         {
             if (!isDrawing) return;
             
+            AddUndo();
             spriteRenderer.Clear();
         }
 
         public void StartDraw(DrawableSpriteRenderer drawable, Action onDone)
         {
+            undoStack.Clear();
+            redoStack.Clear();
+            
             onDoneDrawing = onDone;
             spriteRenderer = drawable;
             spriteRenderer.Clear();
@@ -70,9 +79,40 @@ namespace DrawYourHero.UI
             TextureSave.AsPNG(spriteRenderer.CurrentTexture);
         }
 
+        void Undo()
+        {
+            if (undoStack.Count <= 0) return;
+            var pixels = undoStack.Pop();
+            Debug.Log("UNDOING PIXELS");
+            redoStack.Push((Color[]) spriteRenderer.CurrentPixels.Clone());
+
+            spriteRenderer.ApplyPixels(pixels);
+        }
+
+        void Redo()
+        {
+            if (redoStack.Count <= 0) return;
+            Debug.Log("REDOING PIXELS");
+            var pixels = redoStack.Pop();
+            undoStack.Push((Color[]) spriteRenderer.CurrentPixels.Clone());
+
+            spriteRenderer.ApplyPixels(pixels);
+        }
+        
+
         void Update()
         {
             if (!isDrawing) return;
+
+#if UNITY_EDITOR
+            if (Input.GetKeyDown(KeyCode.Z)) Undo();
+            if (Input.GetKeyDown(KeyCode.Y)) Redo();
+#else
+            if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.Z)) Undo();
+            if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.Y)) Redo();
+#endif
+
+            if (Input.GetMouseButtonDown(0)) AddUndo();
             
             if (!Input.GetMouseButton(0))
             {
@@ -93,6 +133,14 @@ namespace DrawYourHero.UI
 
             lastWorldPoint = worldPoint;
             hasLastMousePosition = true;
+        }
+
+        private void AddUndo()
+        {
+            var pixels = (Color[]) spriteRenderer.CurrentPixels.Clone();
+            Debug.Log("PUSHING PIXELS TO UNDO");
+            undoStack.Push(pixels);
+            redoStack.Clear();
         }
     }
 }

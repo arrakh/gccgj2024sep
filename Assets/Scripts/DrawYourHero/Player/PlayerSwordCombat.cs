@@ -1,4 +1,5 @@
 ﻿using System;
+using DrawYourHero.Damage;
 using UnityEngine;
 
 namespace DrawYourHero.Player
@@ -6,41 +7,78 @@ namespace DrawYourHero.Player
     public class PlayerSwordCombat : MonoBehaviour
     {
         [SerializeField] private GameObject sword;
-        [SerializeField] private Transform aimPivot;
-        [SerializeField] private ParticleSystem swingParticle;
-        [SerializeField] private Animator swordAnimator;
-        [SerializeField] private float cooldown;
+        [SerializeField] private float spinSpeed = 360f;
+        [SerializeField] private SwordCollider swordCollider;
+        [SerializeField] private float baseDamage = 10f;
+        [SerializeField] private float boostCooldown = 3f;
+        [SerializeField] private float boostDuration = 0.6f;
+        [SerializeField] private float boostExtraSpeed = 720f;
+        [SerializeField] private AnimationCurve boostDecayCurve;
 
-        private float currentCooldown;
+        private bool shouldSpin;
 
-        private Camera camera;
+        private float currentBoostCooldown;
+        private float currentBoostDuration;
 
         private void Awake()
         {
-            camera = Camera.main;
-            currentCooldown = cooldown;
+            swordCollider.onHitDamageable += OnHit;
+        }
+
+        private void OnHit(IDamageable damageable)
+        {
+            damageable.Damage(DamageSource.PLAYER, gameObject, baseDamage);
         }
 
         private void Update()
         {
-            LookToMouse();
-            if (IsCooldownUpdate()) return;
+            SpinToWin();
+            BoostUpdate();
+            BoostDurationUpdate();
         }
 
-        private bool IsCooldownUpdate()
+        private void BoostDurationUpdate()
         {
-            currentCooldown -= Time.deltaTime;
-            return currentCooldown > 0f;
+            currentBoostDuration -= Time.deltaTime;
         }
 
-        private void LookToMouse()
+        private void BoostUpdate()
+        {
+            currentBoostCooldown -= Time.deltaTime;
+            if (currentBoostCooldown > 0f) return;
+
+            if (Input.GetKeyDown(KeyCode.Space)) Boost();
+        }
+
+        private void Boost()
+        {
+            currentBoostDuration = boostDuration;
+            currentBoostCooldown = boostCooldown;
+        }
+
+        public void Enable(bool on) => sword.SetActive(on);
+
+        public void EnableSpin(bool on) => shouldSpin = on;
+
+        private void SpinToWin()
+        {
+            if (!shouldSpin) return;
+
+            var boostAlpha = 1f - Mathf.Clamp01(currentBoostDuration / boostDuration);
+            var extraSpeed = boostDecayCurve.Evaluate(boostAlpha) * boostExtraSpeed;
+            var speed = (spinSpeed + extraSpeed) * Time.deltaTime;
+            sword.transform.Rotate(0f, 0f, speed);
+        }
+
+        /*private void LookToMouse()
         {
             var mousePosition = Input.mousePosition;
             mousePosition.z = transform.position.z;
             var worldPoint = camera.ScreenToWorldPoint(mousePosition);
             var pos = transform.position;
-            var angle = Mathf.Atan2(pos.y - worldPoint.y, pos.x - worldPoint.x) * Mathf.Rad2Deg;
-            aimPivot.rotation =  Quaternion.Euler (new Vector3(0f,0f,angle));
-        }
+            lastAngle = Mathf.Atan2(pos.y - worldPoint.y, pos.x - worldPoint.x) * Mathf.Rad2Deg;
+            lastAngle += 90f;
+            aimPivot.rotation = Quaternion.Euler(new Vector3(0f, 0f, lastAngle));
+        }*/
     }
 }
