@@ -9,7 +9,7 @@ namespace DrawYourHero.Player
         [SerializeField] private GameObject sword;
         [SerializeField] private float spinSpeed = 360f;
         [SerializeField] private SwordCollider swordCollider;
-        [SerializeField] private float baseDamage = 10f;
+        [SerializeField] private int baseDamage = 1;
         [SerializeField] private float boostCooldown = 3f;
         [SerializeField] private float boostDuration = 0.6f;
         [SerializeField] private float boostExtraSpeed = 720f;
@@ -19,7 +19,6 @@ namespace DrawYourHero.Player
 
         private float currentBoostCooldown;
         private float currentBoostDuration;
-
         private void Awake()
         {
             swordCollider.onHitDamageable += OnHit;

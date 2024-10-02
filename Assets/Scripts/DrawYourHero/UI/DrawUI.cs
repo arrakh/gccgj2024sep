@@ -87,7 +87,7 @@ namespace DrawYourHero.UI
             if (undoStack.Count <= 0) return;
             var pixels = undoStack.Pop();
             Debug.Log("UNDOING PIXELS");
-            redoStack.Push((Color[]) spriteRenderer.CurrentPixels.Clone());
+            redoStack.Push(spriteRenderer.CurrentPixels);
 
             spriteRenderer.ApplyPixels(pixels);
         }
@@ -97,7 +97,7 @@ namespace DrawYourHero.UI
             if (redoStack.Count <= 0) return;
             Debug.Log("REDOING PIXELS");
             var pixels = redoStack.Pop();
-            undoStack.Push((Color[]) spriteRenderer.CurrentPixels.Clone());
+            undoStack.Push(spriteRenderer.CurrentPixels);
 
             spriteRenderer.ApplyPixels(pixels);
         }
@@ -140,7 +140,7 @@ namespace DrawYourHero.UI
 
         private void AddUndo()
         {
-            var pixels = (Color[]) spriteRenderer.CurrentPixels.Clone();
+            var pixels = spriteRenderer.CurrentPixels;
             Debug.Log("PUSHING PIXELS TO UNDO");
             undoStack.Push(pixels);
             redoStack.Clear();
